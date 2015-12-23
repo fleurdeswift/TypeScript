@@ -597,8 +597,7 @@ namespace ts {
                         if (!isExternalOrCommonJsModule(<SourceFile>location)) break;
                     case SyntaxKind.ModuleDeclaration:
                         const moduleExports = getSymbolOfNode(location).exports;
-                        if (location.kind === SyntaxKind.SourceFile ||
-                            (location.kind === SyntaxKind.ModuleDeclaration && (<ModuleDeclaration>location).name.kind === SyntaxKind.StringLiteral)) {
+                        if (location.kind === SyntaxKind.SourceFile || isAmbientModule(location)) {
 
                             // It's an external module. First see if the module has an export default and if the local
                             // name of that export default matches.
@@ -1552,8 +1551,7 @@ namespace ts {
         }
 
         function hasExternalModuleSymbol(declaration: Node) {
-            return (declaration.kind === SyntaxKind.ModuleDeclaration && (<ModuleDeclaration>declaration).name.kind === SyntaxKind.StringLiteral) ||
-                (declaration.kind === SyntaxKind.SourceFile && isExternalOrCommonJsModule(<SourceFile>declaration));
+            return isAmbientModule(declaration) || (declaration.kind === SyntaxKind.SourceFile && isExternalOrCommonJsModule(<SourceFile>declaration));
         }
 
         function hasVisibleDeclarations(symbol: Symbol): SymbolVisibilityResult {
@@ -11995,7 +11993,7 @@ namespace ts {
                     case SyntaxKind.InterfaceDeclaration:
                         return SymbolFlags.ExportType;
                     case SyntaxKind.ModuleDeclaration:
-                        return (<ModuleDeclaration>d).name.kind === SyntaxKind.StringLiteral || getModuleInstanceState(d) !== ModuleInstanceState.NonInstantiated
+                        return isAmbientModule(d) || getModuleInstanceState(d) !== ModuleInstanceState.NonInstantiated
                             ? SymbolFlags.ExportNamespace | SymbolFlags.ExportValue
                             : SymbolFlags.ExportNamespace;
                     case SyntaxKind.ClassDeclaration:
@@ -14134,7 +14132,7 @@ namespace ts {
         function checkModuleDeclaration(node: ModuleDeclaration) {
             if (produceDiagnostics) {
                 // Grammar checking
-                const isAmbientExternalModule = node.name.kind === SyntaxKind.StringLiteral;
+                const isAmbientExternalModule = isAmbientModule(node);
                 const contextErrorMessage = isAmbientExternalModule
                     ? Diagnostics.An_ambient_module_declaration_is_only_allowed_at_the_top_level_in_a_file
                     : Diagnostics.A_namespace_declaration_is_only_allowed_in_a_namespace_or_module;
@@ -14144,7 +14142,7 @@ namespace ts {
                 }
 
                 if (!checkGrammarDecorators(node) && !checkGrammarModifiers(node)) {
-                    if (!isInAmbientContext(node) && node.name.kind === SyntaxKind.StringLiteral) {
+                    if (!isInAmbientContext(node) && isAmbientExternalModule) {
                         grammarErrorOnNode(node.name, Diagnostics.Only_ambient_modules_can_use_quoted_names);
                     }
                 }
@@ -14294,7 +14292,7 @@ namespace ts {
                 error(moduleName, Diagnostics.String_literal_expected);
                 return false;
             }
-            const inAmbientExternalModule = node.parent.kind === SyntaxKind.ModuleBlock && (<ModuleDeclaration>node.parent.parent).name.kind === SyntaxKind.StringLiteral;
+            const inAmbientExternalModule = node.parent.kind === SyntaxKind.ModuleBlock && isAmbientModule(<ModuleDeclaration>node.parent.parent);
             if (node.parent.kind !== SyntaxKind.SourceFile && !inAmbientExternalModule) {
                 error(moduleName, node.kind === SyntaxKind.ExportDeclaration ?
                     Diagnostics.Export_declarations_are_not_permitted_in_a_namespace :
@@ -14417,7 +14415,7 @@ namespace ts {
                     // export { x, y } from "foo"
                     forEach(node.exportClause.elements, checkExportSpecifier);
 
-                    const inAmbientExternalModule = node.parent.kind === SyntaxKind.ModuleBlock && (<ModuleDeclaration>node.parent.parent).name.kind === SyntaxKind.StringLiteral;
+                    const inAmbientExternalModule = node.parent.kind === SyntaxKind.ModuleBlock && isAmbientModule(node.parent.parent);
                     if (node.parent.kind !== SyntaxKind.SourceFile && !inAmbientExternalModule) {
                         error(node, Diagnostics.Export_declarations_are_not_permitted_in_a_namespace);
                     }
