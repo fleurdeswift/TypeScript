@@ -1347,6 +1347,11 @@ namespace ts {
         emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken): EmitResult;
         
         /**
+         * Replace all compile-time variables by their respective values.
+         */
+        processCompileTimeVariables(variables: {[key: string]: any}): void;
+
+        /**
          * Simplify the AST by simplifying expressions and removing unreachable code.
          */
         optimize(): void;
@@ -1716,6 +1721,7 @@ namespace ts {
         /* @internal */ parent?: Symbol;        // Parent symbol
         /* @internal */ exportSymbol?: Symbol;  // Exported symbol associated with this symbol
         /* @internal */ constEnumOnlyModule?: boolean; // True if module contains only const enums or other modules with only const enums
+        /* @internal */ compileTimeValue?: any; // Defined for compile time variables
     }
 
     /* @internal */

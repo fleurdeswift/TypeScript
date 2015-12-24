@@ -444,6 +444,13 @@ namespace ts {
                 }
             }
 
+            // Process all compile-time variables.
+            program.processCompileTimeVariables({
+                "TEST_BOOL": true,
+                "TEST_STRING": "0.0.1",
+                "TEST_NUMBER": 1
+            });
+            
             // Perform an optimization pass.
             program.optimize();
             

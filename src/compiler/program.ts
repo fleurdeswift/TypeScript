@@ -394,6 +394,7 @@ namespace ts {
             getDiagnosticsProducingTypeChecker,
             getCommonSourceDirectory: () => commonSourceDirectory,
             emit,
+            processCompileTimeVariables,
             optimize,
             getCurrentDirectory: () => host.getCurrentDirectory(),
             getNodeCount: () => getDiagnosticsProducingTypeChecker().getNodeCount(),
@@ -1067,6 +1068,52 @@ namespace ts {
             if (options.emitDecoratorMetadata &&
                 !options.experimentalDecorators) {
                 programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1, "emitDecoratorMetadata", "experimentalDecorators"));
+            }
+        }
+        
+        function processCompileTimeVariablesDeclaration(node: Node, variables: {[key: string]: any}): void {
+            if (node.kind === SyntaxKind.Identifier && node.parent && node.parent.kind === SyntaxKind.VariableDeclaration) {
+                var identifier = <Identifier>node;
+                if (!Object.getOwnPropertyDescriptor(variables, identifier.text)) {
+                    return;
+                }
+                
+                var symbol = getTypeChecker().getSymbolAtLocation(identifier);
+                symbol.compileTimeValue = variables[identifier.text];
+            }
+            
+            forEachChild(node, (child) => {
+                processCompileTimeVariablesDeclaration(child, variables);
+            });
+        }
+        
+        function processCompileTimeVariablesUse(node: Node, variables: {[key: string]: any}): void {
+            if (node.kind === SyntaxKind.Identifier && node.parent && node.parent.kind !== SyntaxKind.VariableDeclaration) {
+                let identifier = <Identifier>node;
+                if (!Object.getOwnPropertyDescriptor(variables, identifier.text)) {
+                    return;
+                }
+                
+                let symbol = getTypeChecker().getSymbolAtLocation(identifier);
+                if (!symbol || !symbol.compileTimeValue) {
+                    return;
+                } 
+                
+                replaceNodeWithLiteral(node, symbol.compileTimeValue);
+            }
+            
+            forEachChild(node, (child) => {
+                processCompileTimeVariablesUse(child, variables);
+            })
+        }
+        
+        function processCompileTimeVariables(variables: {[key: string]: any}): void {
+            for (var file of files) {
+                processCompileTimeVariablesDeclaration(file, variables);
+            }
+            
+            for (var file of files) {
+                processCompileTimeVariablesUse(file, variables);
             }
         }
         
