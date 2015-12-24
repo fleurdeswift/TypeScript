@@ -444,6 +444,9 @@ namespace ts {
                 }
             }
 
+            // Perform an optimization pass.
+            program.optimize();
+            
             reportDiagnostics(diagnostics);
 
             // If the user doesn't want us to emit, then we're done at this point.

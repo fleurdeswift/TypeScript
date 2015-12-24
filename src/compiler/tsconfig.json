@@ -17,6 +17,7 @@
         "binder.ts",
         "checker.ts",
         "emitter.ts",
+        "optimizer.ts",
         "program.ts",
         "commandLineParser.ts",
         "tsc.ts",

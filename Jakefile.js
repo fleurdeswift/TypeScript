@@ -42,6 +42,7 @@ var compilerSources = [
     "checker.ts",
     "declarationEmitter.ts",
     "emitter.ts",
+    "optimizer.ts",
     "program.ts",
     "commandLineParser.ts",
     "tsc.ts",
@@ -61,6 +62,7 @@ var servicesSources = [
     "checker.ts",
     "declarationEmitter.ts",
     "emitter.ts",
+    "optimizer.ts",
     "program.ts",
     "commandLineParser.ts",
     "diagnosticInformationMap.generated.ts"
