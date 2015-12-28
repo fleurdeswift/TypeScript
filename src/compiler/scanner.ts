@@ -60,6 +60,7 @@ namespace ts {
         "class": SyntaxKind.ClassKeyword,
         "continue": SyntaxKind.ContinueKeyword,
         "const": SyntaxKind.ConstKeyword,
+        "constexpr": SyntaxKind.ConstExprKeyword,
         "constructor": SyntaxKind.ConstructorKeyword,
         "debugger": SyntaxKind.DebuggerKeyword,
         "declare": SyntaxKind.DeclareKeyword,

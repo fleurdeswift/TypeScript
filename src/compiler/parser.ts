@@ -1116,7 +1116,7 @@ namespace ts {
         }
 
         function nextTokenCanFollowModifier() {
-            if (token === SyntaxKind.ConstKeyword) {
+            if (token === SyntaxKind.ConstKeyword || token === SyntaxKind.ConstExprKeyword) {
                 // 'const' is only a modifier if followed by 'enum'.
                 return nextToken() === SyntaxKind.EnumKeyword;
             }
@@ -4067,7 +4067,7 @@ namespace ts {
 
             let initializer: VariableDeclarationList | Expression = undefined;
             if (token !== SyntaxKind.SemicolonToken) {
-                if (token === SyntaxKind.VarKeyword || token === SyntaxKind.LetKeyword || token === SyntaxKind.ConstKeyword) {
+                if (token === SyntaxKind.VarKeyword || token === SyntaxKind.LetKeyword || token === SyntaxKind.ConstKeyword || token === SyntaxKind.ConstExprKeyword) {
                     initializer = parseVariableDeclarationList(/*inForStatementInitializer*/ true);
                 }
                 else {
@@ -4273,6 +4273,7 @@ namespace ts {
                     case SyntaxKind.VarKeyword:
                     case SyntaxKind.LetKeyword:
                     case SyntaxKind.ConstKeyword:
+                    case SyntaxKind.ConstExprKeyword:
                     case SyntaxKind.FunctionKeyword:
                     case SyntaxKind.ClassKeyword:
                     case SyntaxKind.EnumKeyword:
@@ -4372,6 +4373,7 @@ namespace ts {
                     return true;
 
                 case SyntaxKind.ConstKeyword:
+                case SyntaxKind.ConstExprKeyword:
                 case SyntaxKind.ExportKeyword:
                 case SyntaxKind.ImportKeyword:
                     return isStartOfDeclaration();
@@ -4462,6 +4464,7 @@ namespace ts {
                 case SyntaxKind.NamespaceKeyword:
                 case SyntaxKind.DeclareKeyword:
                 case SyntaxKind.ConstKeyword:
+                case SyntaxKind.ConstExprKeyword:
                 case SyntaxKind.EnumKeyword:
                 case SyntaxKind.ExportKeyword:
                 case SyntaxKind.ImportKeyword:
@@ -4486,6 +4489,7 @@ namespace ts {
                 case SyntaxKind.VarKeyword:
                 case SyntaxKind.LetKeyword:
                 case SyntaxKind.ConstKeyword:
+                case SyntaxKind.ConstExprKeyword:
                     return parseVariableStatement(fullStart, decorators, modifiers);
                 case SyntaxKind.FunctionKeyword:
                     return parseFunctionDeclaration(fullStart, decorators, modifiers);
@@ -4615,6 +4619,9 @@ namespace ts {
                     break;
                 case SyntaxKind.ConstKeyword:
                     node.flags |= NodeFlags.Const;
+                    break;
+                case SyntaxKind.ConstExprKeyword:
+                    node.flags |= NodeFlags.ConstExpr;
                     break;
                 default:
                     Debug.fail();

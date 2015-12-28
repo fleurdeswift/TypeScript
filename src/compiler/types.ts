@@ -165,6 +165,7 @@ namespace ts {
         SymbolKeyword,
         TypeKeyword,
         FromKeyword,
+        ConstExprKeyword,
         OfKeyword, // LastKeyword and LastToken
 
         // Parse tree nodes
@@ -379,10 +380,11 @@ namespace ts {
         Namespace =         0x00020000,  // Namespace declaration
         ExportContext =     0x00040000,  // Export context (initialized by binding)
         ContainsThis =      0x00080000,  // Interface contains references to "this"
+        ConstExpr =         0x00100000,  // Compile-Time Variable/Function declaration
 
-        Modifier = Export | Ambient | Public | Private | Protected | Static | Abstract | Default | Async,
+        Modifier = Export | Ambient | Public | Private | Protected | Static | Abstract | Default | Async | ConstExpr,
         AccessibilityModifier = Public | Private | Protected,
-        BlockScoped = Let | Const
+        BlockScoped = Let | Const | ConstExpr
     }
 
     /* @internal */

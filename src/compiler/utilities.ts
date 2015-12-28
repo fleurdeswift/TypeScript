@@ -1464,6 +1464,7 @@ namespace ts {
             case SyntaxKind.AbstractKeyword:
             case SyntaxKind.AsyncKeyword:
             case SyntaxKind.ConstKeyword:
+            case SyntaxKind.ConstExprKeyword:
             case SyntaxKind.DeclareKeyword:
             case SyntaxKind.DefaultKeyword:
             case SyntaxKind.ExportKeyword:
