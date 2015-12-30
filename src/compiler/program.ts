@@ -96,7 +96,7 @@ namespace ts {
                 jsonContent = jsonText ? <{ typings?: string }>JSON.parse(jsonText) : { typings: undefined };
             }
             catch (e) {
-                // gracefully handle if readFile fails or returns not JSON 
+                // gracefully handle if readFile fails or returns not JSON
                 jsonContent = { typings: undefined };
             }
 
@@ -167,7 +167,7 @@ namespace ts {
             searchName = normalizePath(combinePaths(searchPath, moduleName));
             referencedSourceFile = forEach(supportedExtensions, extension => {
                 if (extension === ".tsx" && !compilerOptions.jsx) {
-                    // resolve .tsx files only if jsx support is enabled 
+                    // resolve .tsx files only if jsx support is enabled
                     // 'logical not' handles both undefined and None cases
                     return undefined;
                 }
@@ -714,13 +714,13 @@ namespace ts {
                     case SyntaxKind.ModuleDeclaration:
                         if ((<ModuleDeclaration>node).name.kind === SyntaxKind.StringLiteral && (node.flags & NodeFlags.Ambient || isDeclarationFile(file))) {
                             // TypeScript 1.0 spec (April 2014): 12.1.6
-                            // An AmbientExternalModuleDeclaration declares an external module. 
+                            // An AmbientExternalModuleDeclaration declares an external module.
                             // This type of declaration is permitted only in the global module.
                             // The StringLiteral must specify a top - level external module name.
                             // Relative external module names are not permitted
                             forEachChild((<ModuleDeclaration>node).body, node => {
                                 // TypeScript 1.0 spec (April 2014): 12.1.6
-                                // An ExternalImportDeclaration in anAmbientExternalModuleDeclaration may reference other external modules 
+                                // An ExternalImportDeclaration in anAmbientExternalModuleDeclaration may reference other external modules
                                 // only through top - level external module names. Relative external module names are not permitted.
                                 collect(node, /* allowRelativeModuleNames */ false);
                             });
@@ -783,7 +783,7 @@ namespace ts {
             if (filesByName.contains(normalizedAbsolutePath)) {
                 const file = getSourceFileFromCache(normalizedAbsolutePath, /*useAbsolutePath*/ true);
                 // we don't have resolution for this relative file name but the match was found by absolute file name
-                // store resolution for relative name as well 
+                // store resolution for relative name as well
                 filesByName.set(fileName, file);
                 return file;
             }
@@ -1071,53 +1071,53 @@ namespace ts {
                 programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1, "emitDecoratorMetadata", "experimentalDecorators"));
             }
         }
-        
+
         function processCompileTimeVariablesDeclaration(node: Node, variables: {[key: string]: any}): void {
             if (node.kind === SyntaxKind.Identifier && node.parent && node.parent.kind === SyntaxKind.VariableDeclaration) {
-                var identifier = <Identifier>node;
+                let identifier = <Identifier>node;
                 if (!Object.getOwnPropertyDescriptor(variables, identifier.text)) {
                     return;
                 }
-                
-                var symbol = getTypeChecker().getSymbolAtLocation(identifier);
+
+                let symbol = getTypeChecker().getSymbolAtLocation(identifier);
                 symbol.compileTimeValue = variables[identifier.text];
             }
-            
+
             forEachChild(node, (child) => {
                 processCompileTimeVariablesDeclaration(child, variables);
             });
         }
-        
+
         function processCompileTimeVariablesUse(node: Node, variables: {[key: string]: any}): void {
             if (node.kind === SyntaxKind.Identifier && node.parent && node.parent.kind !== SyntaxKind.VariableDeclaration) {
                 let identifier = <Identifier>node;
                 if (!Object.getOwnPropertyDescriptor(variables, identifier.text)) {
                     return;
                 }
-                
+
                 let symbol = getTypeChecker().getSymbolAtLocation(identifier);
                 if (!symbol || !symbol.compileTimeValue) {
                     return;
-                } 
-                
+                }
+
                 replaceNodeWithLiteral(node, symbol.compileTimeValue);
             }
-            
+
             forEachChild(node, (child) => {
                 processCompileTimeVariablesUse(child, variables);
-            })
+            });
         }
-        
+
         function processCompileTimeVariables(variables: {[key: string]: any}): void {
-            for (var file of files) {
+            for (let file of files) {
                 processCompileTimeVariablesDeclaration(file, variables);
             }
-            
+
             for (var file of files) {
                 processCompileTimeVariablesUse(file, variables);
             }
         }
-        
+
         function optimize() {
             for (let file of files) {
                 optimizeNode(file);

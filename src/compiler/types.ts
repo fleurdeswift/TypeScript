@@ -1347,7 +1347,7 @@ namespace ts {
          * will be invoked when writing the JavaScript and declaration files.
          */
         emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken): EmitResult;
-        
+
         /**
          * Replace all compile-time variables by their respective values.
          */

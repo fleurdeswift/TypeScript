@@ -4,27 +4,27 @@
 
 namespace ts {
     export function replaceNode(oldNode: Node, newNode: Node): boolean {
-        var parentNode = oldNode.parent;
-        
-        for (var property in parentNode) {
-            var propertyValue: any = (<any>parentNode)[property];
+        let parentNode = oldNode.parent;
+
+        for (let property in parentNode) {
+            let propertyValue: any = (<any>parentNode)[property];
             if (propertyValue === oldNode) {
                 (<any>parentNode)[property] = newNode;
                 return true;
             }
             else if (Array.isArray(propertyValue)) {
-                var index = propertyValue.indexOf(oldNode);
+                let index = propertyValue.indexOf(oldNode);
                 if (index >= 0) {
                     propertyValue[index] = newNode;
-                    return true;           
+                    return true;
                 }
             }
         }
-        
-        console.log("Failed to optimize", oldNode, "by", newNode)
+
+        console.log("Failed to optimize", oldNode, "by", newNode);
         return false;
     }
-    
+
     function evaluateNode(node: Node): any {
         switch (node.kind) {
         case SyntaxKind.TrueKeyword:
@@ -43,7 +43,7 @@ namespace ts {
                     if (typeof operandValue === "object") {
                         return node;
                     }
-                    
+
                     return !operandValue;
                 }
             }
@@ -90,20 +90,20 @@ namespace ts {
                     return leftValue >= rightValue;
                 default:
                     break;
-                }             
+                }
             }
             break;
         }
-        
+
         return node;
     }
-    
+
     function optimizeIfStatement(node: IfStatement) {
-        var evaluatedValue = evaluateNode(node.expression);
+        let evaluatedValue = evaluateNode(node.expression);
         if (typeof evaluatedValue === "object") {
             return;
         }
-        
+
         if (evaluatedValue) {
             replaceNode(node, node.thenStatement);
         }
@@ -111,7 +111,7 @@ namespace ts {
             replaceNode(node, node.elseStatement);
         }
     }
-    
+
     export function replaceNodeWithLiteral(node: Node, literal: any) {
         let literalType = typeof literal;
 
@@ -126,36 +126,36 @@ namespace ts {
             else {
                 node.kind = SyntaxKind.FalseKeyword;
             }
-            
-            node.parent = null;
+
+            node.parent = undefined;
             node.pos = -1;
         }
         else if (literalType === "number") {
             node.kind = SyntaxKind.NumericLiteral;
-            node.parent = null;
+            node.parent = undefined;
             node.pos = -1;
             (<LiteralExpression>node).text = "" + literal;
         }
         else if (literalType === "string") {
             node.kind = SyntaxKind.StringLiteral;
-            node.parent = null;
+            node.parent = undefined;
             node.pos = -1;
             (<LiteralExpression>node).text = literal;
         }
         else {
-            console.log("Failed to replace node", node, "with", literal)
+            console.log("Failed to replace node", node, "with", literal);
         }
     }
-    
+
     function optimizeExression(node: Expression) {
-        var evaluatedValue = evaluateNode(node);
+        let evaluatedValue = evaluateNode(node);
         if (typeof evaluatedValue === "object") {
             return;
         }
-        
+
         replaceNodeWithLiteral(node, evaluatedValue);
     }
-    
+
     export function optimizeNode(node: Node) {
         switch (node.kind) {
         case SyntaxKind.IfStatement:
@@ -168,9 +168,9 @@ namespace ts {
         default:
             break;
         }
-        
+
         forEachChild(node, (child) => {
             optimizeNode(child);
-        })
+        });
     }
 }

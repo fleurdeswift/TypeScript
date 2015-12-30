@@ -224,7 +224,7 @@ namespace ts {
             if (sys.watchDirectory && configFileName) {
                 let directory = ts.getDirectoryPath(configFileName);
                 directoryWatcher = sys.watchDirectory(
-                    // When the configFileName is just "tsconfig.json", the watched directory should be 
+                    // When the configFileName is just "tsconfig.json", the watched directory should be
                     // the current direcotry; if there is a given "project" parameter, then the configFileName
                     // is an absolute file name.
                     directory == "" ? "." : directory,
@@ -450,10 +450,10 @@ namespace ts {
                 "TEST_STRING": "0.0.1",
                 "TEST_NUMBER": 1
             });
-            
+
             // Perform an optimization pass.
             program.optimize();
-            
+
             reportDiagnostics(diagnostics);
 
             // If the user doesn't want us to emit, then we're done at this point.
