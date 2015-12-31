@@ -2060,6 +2060,20 @@ namespace ts {
         NodeJs  = 2
     }
 
+    export const enum Optimizations {
+        None = 0,
+
+        InlineAllStrings = 1 << 1,
+        InlineSmallStrings = 1 << 2,
+        InlineNumericAndBooleans = 1 << 3,
+
+        StripUnreachableCodeInConstantConditions = 1 << 4,
+
+        Size = InlineNumericAndBooleans | StripUnreachableCodeInConstantConditions,
+        Moderate = InlineSmallStrings | InlineNumericAndBooleans | StripUnreachableCodeInConstantConditions,
+        Fastest = InlineAllStrings | InlineNumericAndBooleans | StripUnreachableCodeInConstantConditions
+    }
+
     export interface CompilerOptions {
         allowNonTsExtensions?: boolean;
         charset?: string;
@@ -2101,6 +2115,7 @@ namespace ts {
         experimentalDecorators?: boolean;
         emitDecoratorMetadata?: boolean;
         moduleResolution?: ModuleResolutionKind;
+        optimizations?: Optimizations;
         /* @internal */ stripInternal?: boolean;
 
         // Skip checking lib.d.ts to help speed up tests.
@@ -2322,7 +2337,7 @@ namespace ts {
     export interface ModuleResolutionHost {
         fileExists(fileName: string): boolean;
         // readFile function is used to read arbitrary text files on disk, i.e. when resolution procedure needs the content of 'package.json'
-        // to determine location of bundled typings for node module 
+        // to determine location of bundled typings for node module
         readFile(fileName: string): string;
     }
 
@@ -2330,7 +2345,7 @@ namespace ts {
         resolvedFileName: string;
         /*
          * Denotes if 'resolvedFileName' is isExternalLibraryImport and thus should be proper external module:
-         * - be a .d.ts file 
+         * - be a .d.ts file
          * - use top level imports\exports
          * - don't use tripleslash references
          */
@@ -2353,11 +2368,11 @@ namespace ts {
         getNewLine(): string;
 
         /*
-         * CompilerHost must either implement resolveModuleNames (in case if it wants to be completely in charge of 
-         * module name resolution) or provide implementation for methods from ModuleResolutionHost (in this case compiler 
+         * CompilerHost must either implement resolveModuleNames (in case if it wants to be completely in charge of
+         * module name resolution) or provide implementation for methods from ModuleResolutionHost (in this case compiler
          * will appply built-in module resolution logic and use members of ModuleResolutionHost to ask host specific questions).
-         * If resolveModuleNames is implemented then implementation for members from ModuleResolutionHost can be just 
-         * 'throw new Error("NotImplemented")'  
+         * If resolveModuleNames is implemented then implementation for members from ModuleResolutionHost can be just
+         * 'throw new Error("NotImplemented")'
          */
         resolveModuleNames?(moduleNames: string[], containingFile: string): ResolvedModule[];
     }

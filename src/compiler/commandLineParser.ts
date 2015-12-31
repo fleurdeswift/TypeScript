@@ -247,6 +247,17 @@ namespace ts {
             },
             description: Diagnostics.Specifies_module_resolution_strategy_Colon_node_Node_js_or_classic_TypeScript_pre_1_6,
             error: Diagnostics.Argument_for_moduleResolution_option_must_be_node_or_classic,
+        },
+        {
+            name: "optimize",
+            type: {
+                "none": Optimizations.None,
+                "moderate": Optimizations.Moderate,
+                "size": Optimizations.Size,
+                "fastest": Optimizations.Fastest
+            },
+            description: Diagnostics.Specify_optimization_level_Colon_none_moderate_size_or_fastest,
+            error: Diagnostics.Argument_for_optimization_option_must_be_none_moderate_size_or_fastest,
         }
     ];
 

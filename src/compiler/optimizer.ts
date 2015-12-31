@@ -56,6 +56,21 @@ namespace ts {
                 if (typeof leftValue === "object") {
                     return node;
                 }
+
+                switch (binaryExpression.operatorToken.kind) {
+                case SyntaxKind.AmpersandAmpersandToken:
+                    if (!leftValue) {
+                        return leftValue;
+                    }
+                    break;
+
+                case SyntaxKind.BarBarToken:
+                    if (leftValue) {
+                        return leftValue;
+                    }
+                    break;
+                }
+
                 let rightValue = evaluateNode(binaryExpression.right);
                 if (typeof rightValue === "object") {
                     return node;
@@ -98,20 +113,6 @@ namespace ts {
         return node;
     }
 
-    function optimizeIfStatement(node: IfStatement) {
-        let evaluatedValue = evaluateNode(node.expression);
-        if (typeof evaluatedValue === "object") {
-            return;
-        }
-
-        if (evaluatedValue) {
-            replaceNode(node, node.thenStatement);
-        }
-        else {
-            replaceNode(node, node.elseStatement);
-        }
-    }
-
     export function replaceNodeWithLiteral(node: Node, literal: any) {
         let literalType = typeof literal;
 
@@ -147,7 +148,21 @@ namespace ts {
         }
     }
 
-    function optimizeExression(node: Expression) {
+    function optimizeIfStatement(node: IfStatement, optimizations: Optimizations) {
+        let evaluatedValue = evaluateNode(node.expression);
+        if (typeof evaluatedValue === "object") {
+            return;
+        }
+
+        if (evaluatedValue) {
+            replaceNode(node, node.thenStatement);
+        }
+        else {
+            replaceNode(node, node.elseStatement);
+        }
+    }
+
+    function optimizeExression(node: Expression, optimizations: Optimizations) {
         let evaluatedValue = evaluateNode(node);
         if (typeof evaluatedValue === "object") {
             return;
@@ -156,21 +171,21 @@ namespace ts {
         replaceNodeWithLiteral(node, evaluatedValue);
     }
 
-    export function optimizeNode(node: Node) {
+    export function optimizeNode(node: Node, optimizations: Optimizations) {
         switch (node.kind) {
         case SyntaxKind.IfStatement:
-            optimizeIfStatement(<IfStatement>node);
+            optimizeIfStatement(<IfStatement>node, optimizations);
             break;
         case SyntaxKind.BinaryExpression:
         case SyntaxKind.PrefixUnaryExpression:
-            optimizeExression(<Expression>node);
+            optimizeExression(<Expression>node, optimizations);
             break;
         default:
             break;
         }
 
         forEachChild(node, (child) => {
-            optimizeNode(child);
+            optimizeNode(child, optimizations);
         });
     }
 }

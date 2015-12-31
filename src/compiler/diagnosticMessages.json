@@ -799,7 +799,7 @@
     "'=' can only be used in an object literal property inside a destructuring assignment.": {
         "category": "Error",
         "code": 1312
-    },    
+    },
     "Duplicate identifier '{0}'.": {
         "category": "Error",
         "code": 2300
@@ -2289,6 +2289,14 @@
     "Suppress excess property checks for object literals.": {
         "category": "Message",
         "code": 6072
+    },
+    "Specify optimization level: 'none', 'moderate', 'size' or 'fastest'": {
+        "category": "Message",
+        "code": 6073
+    },
+    "Argument for '--optimization' option must be 'none', 'moderate', 'size' or 'fastest'.": {
+        "category": "Error",
+        "code": 6074
     },
 
     "Variable '{0}' implicitly has an '{1}' type.": {

@@ -1020,6 +1020,7 @@ namespace ts {
             }
 
             // Cannot specify module gen target of es6 when below es6
+
             if (options.module === ModuleKind.ES6 && languageVersion < ScriptTarget.ES6) {
                 programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Cannot_compile_modules_into_es6_when_targeting_ES5_or_lower));
             }
@@ -1120,7 +1121,7 @@ namespace ts {
 
         function optimize() {
             for (let file of files) {
-                optimizeNode(file);
+                optimizeNode(file, options.optimizations);
             }
         }
     }
