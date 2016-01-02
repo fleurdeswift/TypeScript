@@ -1121,7 +1121,7 @@ namespace ts {
 
         function optimize() {
             for (let file of files) {
-                optimizeNode(file, options.optimizations);
+                optimizeNode(file, getTypeChecker(), options.optimizations);
             }
         }
     }

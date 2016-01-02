@@ -3,6 +3,10 @@
 /// <reference path="core.ts" />
 
 namespace ts {
+    function isLiteral(value: any): boolean {
+        return typeof value !== "object";
+    }
+    
     export function replaceNode(oldNode: Node, newNode: Node): boolean {
         let parentNode = oldNode.parent;
 
@@ -113,12 +117,12 @@ namespace ts {
         return node;
     }
 
-    export function replaceNodeWithLiteral(node: Node, literal: any) {
+    export function replaceNodeWithLiteral(node: Node, literal: boolean | number | string): Node {
         let literalType = typeof literal;
 
         if (literalType === "undefined") {
             // Undefined... Leave it untouched.
-            return;
+            return node;
         }
         else if (literalType === "boolean") {
             if (literal) {
@@ -135,57 +139,98 @@ namespace ts {
             node.kind = SyntaxKind.NumericLiteral;
             node.parent = undefined;
             node.pos = -1;
-            (<LiteralExpression>node).text = "" + literal;
+            (<LiteralExpression>node).text = String(literal);
         }
         else if (literalType === "string") {
             node.kind = SyntaxKind.StringLiteral;
             node.parent = undefined;
             node.pos = -1;
-            (<LiteralExpression>node).text = literal;
+            (<LiteralExpression>node).text = <string>literal;
         }
         else {
             console.log("Failed to replace node", node, "with", literal);
         }
+        
+        return node;
     }
 
-    function optimizeIfStatement(node: IfStatement, optimizations: Optimizations) {
+    function optimizeIfStatement(node: IfStatement, optimizations: Optimizations): Node {
         let evaluatedValue = evaluateNode(node.expression);
-        if (typeof evaluatedValue === "object") {
-            return;
+        if (!isLiteral(evaluatedValue)) {
+            return node;
         }
 
         if (evaluatedValue) {
-            replaceNode(node, node.thenStatement);
+            if (replaceNode(node, node.thenStatement)) {
+                return node.thenStatement;
+            }
         }
         else {
-            replaceNode(node, node.elseStatement);
+            if (replaceNode(node, node.elseStatement)) {
+                return node.elseStatement;
+            }
         }
+        
+        return node;
     }
 
-    function optimizeExression(node: Expression, optimizations: Optimizations) {
+    function optimizeExression(node: Expression, optimizations: Optimizations): Node {
         let evaluatedValue = evaluateNode(node);
-        if (typeof evaluatedValue === "object") {
-            return;
+        if (!isLiteral(evaluatedValue)) {
+            return node;
         }
 
-        replaceNodeWithLiteral(node, evaluatedValue);
+        return replaceNodeWithLiteral(node, evaluatedValue);
+    }
+    
+    function optimizeIdentifier(node: Identifier, typeChecker: TypeChecker, optimizations: Optimizations): Node {
+        if (!node.parent || node.parent.kind === SyntaxKind.VariableDeclaration) {
+            // Skip declaractions
+            return node;
+        }
+
+        let symbol = typeChecker.getSymbolAtLocation(node);
+        if (!symbol || !(symbol.flags & SymbolFlags.BlockScopedVariable) || !symbol.valueDeclaration) {
+            // Skip symbol that don't have any value declarations
+            return node;
+        }
+        
+        let valueDecl = <VariableDeclaration>symbol.valueDeclaration;
+        console.error(symbol.name, valueDecl.kind);
+        if (!(valueDecl.flags & NodeFlags.Const) || !valueDecl.initializer) {
+            // Skip non-const symbols
+            return node;
+        }
+        
+        let evaluatedValue = evaluateNode(valueDecl.initializer);
+        if (!isLiteral(evaluatedValue)) {
+            // Can't reduce the expression to a literal value
+            return node;
+        }
+        
+        return replaceNodeWithLiteral(node, evaluatedValue);
     }
 
-    export function optimizeNode(node: Node, optimizations: Optimizations) {
+    export function optimizeNode(node: Node, typeChecker: TypeChecker, optimizations: Optimizations): Node {
         switch (node.kind) {
         case SyntaxKind.IfStatement:
-            optimizeIfStatement(<IfStatement>node, optimizations);
+            node = optimizeIfStatement(<IfStatement>node, optimizations);
             break;
         case SyntaxKind.BinaryExpression:
         case SyntaxKind.PrefixUnaryExpression:
-            optimizeExression(<Expression>node, optimizations);
+            node = optimizeExression(<Expression>node, optimizations);
+            break;
+        case SyntaxKind.Identifier:
+            node = optimizeIdentifier(<Identifier>node, typeChecker, optimizations)
             break;
         default:
             break;
         }
 
         forEachChild(node, (child) => {
-            optimizeNode(child, optimizations);
+            optimizeNode(child, typeChecker, optimizations);
         });
+        
+        return node;
     }
 }
