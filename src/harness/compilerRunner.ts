@@ -126,6 +126,13 @@ class CompilerBaselineRunner extends RunnerBase {
                 return Harness.Compiler.getErrorBaseline(toBeCompiled.concat(otherFiles), result.errors);
             }
 
+            it("Correct AST for " + fileName, () => {
+                Harness.Baseline.runBaseline("Correct AST for " + fileName, justName.replace(/\.tsx?$/, ".AST.txt"), () => {
+                    let sourceFile = result.program.getSourceFile(fileName);
+                    return Utils.sourceFileToJSON(sourceFile);
+                });
+            });
+
             // check errors
             it("Correct errors for " + fileName, () => {
                 if (this.errors) {

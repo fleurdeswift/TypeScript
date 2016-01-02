@@ -1121,6 +1121,10 @@ namespace ts {
 
         function optimize() {
             for (let file of files) {
+                if (file.isDefaultLib) {
+                    continue;
+                }
+
                 optimizeNode(file, getTypeChecker(), options.optimizations);
             }
         }

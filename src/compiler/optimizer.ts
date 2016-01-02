@@ -6,7 +6,7 @@ namespace ts {
     function isLiteral(value: any): boolean {
         return typeof value !== "object";
     }
-    
+
     export function replaceNode(oldNode: Node, newNode: Node): boolean {
         let parentNode = oldNode.parent;
 
@@ -29,7 +29,39 @@ namespace ts {
         return false;
     }
 
-    function evaluateNode(node: Node): any {
+    function evaluateIdentifier(identifier: Identifier, typeChecker: TypeChecker, optimizations: Optimizations): any {
+        if (!identifier.parent || identifier.parent.kind === SyntaxKind.VariableDeclaration) {
+            // Skip declaractions
+            return identifier;
+        }
+
+        let symbol = typeChecker.getSymbolAtLocation(identifier);
+        if (!symbol || !(symbol.flags & SymbolFlags.BlockScopedVariable) || !symbol.valueDeclaration) {
+            // Skip symbol that don't have any value declarations
+            return identifier;
+        }
+
+        let valueDecl = <VariableDeclaration>symbol.valueDeclaration;
+        if (!(valueDecl.kind === SyntaxKind.VariableDeclaration) || !valueDecl.initializer) {
+            return identifier;
+        }
+
+        let valueDeclList = <VariableDeclarationList>valueDecl.parent;
+        if (!(valueDeclList.kind === SyntaxKind.VariableDeclarationList) || !(valueDeclList.flags & NodeFlags.Const)) {
+            // Skip non-const symbols
+            return identifier;
+        }
+
+        let evaluatedValue = evaluateNode(valueDecl.initializer, typeChecker, optimizations);
+        if (!isLiteral(evaluatedValue)) {
+            // Can't reduce the expression to a literal value
+            return identifier;
+        }
+
+        return evaluatedValue;
+    }
+
+    function evaluateNode(node: Node, typeChecker: TypeChecker, optimizations: Optimizations): any {
         switch (node.kind) {
         case SyntaxKind.TrueKeyword:
             return true;
@@ -43,7 +75,7 @@ namespace ts {
             {
                 let unaryExpression = <PrefixUnaryExpression>node;
                 if (unaryExpression.operator === SyntaxKind.ExclamationToken) {
-                    let operandValue = evaluateNode(unaryExpression.operand);
+                    let operandValue = evaluateNode(unaryExpression.operand, typeChecker, optimizations);
                     if (typeof operandValue === "object") {
                         return node;
                     }
@@ -53,10 +85,13 @@ namespace ts {
             }
             break;
 
+        case SyntaxKind.Identifier:
+            return evaluateIdentifier(<Identifier>node, typeChecker, optimizations);
+
         case SyntaxKind.BinaryExpression:
             {
                 let binaryExpression = <BinaryExpression>node;
-                let leftValue = evaluateNode(binaryExpression.left);
+                let leftValue = evaluateNode(binaryExpression.left, typeChecker, optimizations);
                 if (typeof leftValue === "object") {
                     return node;
                 }
@@ -75,7 +110,7 @@ namespace ts {
                     break;
                 }
 
-                let rightValue = evaluateNode(binaryExpression.right);
+                let rightValue = evaluateNode(binaryExpression.right, typeChecker, optimizations);
                 if (typeof rightValue === "object") {
                     return node;
                 }
@@ -131,31 +166,24 @@ namespace ts {
             else {
                 node.kind = SyntaxKind.FalseKeyword;
             }
-
-            node.parent = undefined;
-            node.pos = -1;
         }
         else if (literalType === "number") {
             node.kind = SyntaxKind.NumericLiteral;
-            node.parent = undefined;
-            node.pos = -1;
             (<LiteralExpression>node).text = String(literal);
         }
         else if (literalType === "string") {
             node.kind = SyntaxKind.StringLiteral;
-            node.parent = undefined;
-            node.pos = -1;
             (<LiteralExpression>node).text = <string>literal;
         }
         else {
             console.log("Failed to replace node", node, "with", literal);
         }
-        
+
         return node;
     }
 
-    function optimizeIfStatement(node: IfStatement, optimizations: Optimizations): Node {
-        let evaluatedValue = evaluateNode(node.expression);
+    function optimizeIfStatement(node: IfStatement, typeChecker: TypeChecker, optimizations: Optimizations): Node {
+        let evaluatedValue = evaluateNode(node.expression, typeChecker, optimizations);
         if (!isLiteral(evaluatedValue)) {
             return node;
         }
@@ -170,55 +198,43 @@ namespace ts {
                 return node.elseStatement;
             }
         }
-        
+
         return node;
     }
 
-    function optimizeExression(node: Expression, optimizations: Optimizations): Node {
-        let evaluatedValue = evaluateNode(node);
+    function optimizeExression(node: Expression, typeChecker: TypeChecker, optimizations: Optimizations): Node {
+        let evaluatedValue = evaluateNode(node, typeChecker, optimizations);
         if (!isLiteral(evaluatedValue)) {
             return node;
         }
 
         return replaceNodeWithLiteral(node, evaluatedValue);
     }
-    
-    function optimizeIdentifier(node: Identifier, typeChecker: TypeChecker, optimizations: Optimizations): Node {
-        if (!node.parent || node.parent.kind === SyntaxKind.VariableDeclaration) {
-            // Skip declaractions
-            return node;
-        }
 
-        let symbol = typeChecker.getSymbolAtLocation(node);
-        if (!symbol || !(symbol.flags & SymbolFlags.BlockScopedVariable) || !symbol.valueDeclaration) {
-            // Skip symbol that don't have any value declarations
-            return node;
-        }
-        
-        let valueDecl = <VariableDeclaration>symbol.valueDeclaration;
-        console.error(symbol.name, valueDecl.kind);
-        if (!(valueDecl.flags & NodeFlags.Const) || !valueDecl.initializer) {
-            // Skip non-const symbols
-            return node;
-        }
-        
-        let evaluatedValue = evaluateNode(valueDecl.initializer);
+    function optimizeIdentifier(node: Identifier, typeChecker: TypeChecker, optimizations: Optimizations): Node {
+        let evaluatedValue = evaluateIdentifier(node, typeChecker, optimizations);
         if (!isLiteral(evaluatedValue)) {
             // Can't reduce the expression to a literal value
             return node;
         }
-        
-        return replaceNodeWithLiteral(node, evaluatedValue);
+
+        switch (node.parent.kind) {
+            case SyntaxKind.CallExpression:
+            case SyntaxKind.BinaryExpression:
+                return replaceNodeWithLiteral(node, evaluatedValue);
+            default:
+                return node;
+        }
     }
 
     export function optimizeNode(node: Node, typeChecker: TypeChecker, optimizations: Optimizations): Node {
         switch (node.kind) {
         case SyntaxKind.IfStatement:
-            node = optimizeIfStatement(<IfStatement>node, optimizations);
+            node = optimizeIfStatement(<IfStatement>node, typeChecker, optimizations);
             break;
         case SyntaxKind.BinaryExpression:
         case SyntaxKind.PrefixUnaryExpression:
-            node = optimizeExression(<Expression>node, optimizations);
+            node = optimizeExression(<Expression>node, typeChecker, optimizations);
             break;
         case SyntaxKind.Identifier:
             node = optimizeIdentifier(<Identifier>node, typeChecker, optimizations)
@@ -230,7 +246,7 @@ namespace ts {
         forEachChild(node, (child) => {
             optimizeNode(child, typeChecker, optimizations);
         });
-        
+
         return node;
     }
 }
